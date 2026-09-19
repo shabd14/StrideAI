@@ -1,0 +1,25 @@
+workflows:
+  android-workflow:
+    name: Build Android APK
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      java: 17
+      android_sdk: 35
+    scripts:
+      - name: Set up Gradle Wrapper
+        script: |
+          gradle wrapper --gradle-version 8.9
+          chmod +x gradlew
+      - name: Build Android Debug APK
+        script: |
+          ./gradlew assembleDebug
+    artifacts:
+      - app/build/outputs/apk/**/*.apk
+    publishing:
+      email:
+        recipients:
+          - shabdtyagi14@gmail.com
+        notify:
+          failure: true
+          success: true
