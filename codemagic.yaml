@@ -5,7 +5,6 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       java: 17
-      android_sdk: 35
     scripts:
       - name: Set up Gradle Wrapper
         script: |
