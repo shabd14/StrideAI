@@ -3,6 +3,7 @@ workflows:
     name: Build Android APK
     max_build_duration: 30
     instance_type: mac_mini_m1
+    working_directory: StrideAI   # <-- Agar folder ka naam StrideAI ya pr1 hai toh yahan likhein
     environment:
       java: 17
     scripts:
@@ -14,7 +15,7 @@ workflows:
         script: |
           ./gradlew assembleDebug
     artifacts:
-      - app/build/outputs/apk/**/*.apk
+      - "**/build/outputs/apk/**/*.apk"
     publishing:
       email:
         recipients:
