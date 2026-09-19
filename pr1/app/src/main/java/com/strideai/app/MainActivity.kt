@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -37,7 +38,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -61,10 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -208,7 +205,6 @@ class StepViewModel(application: Application) : ViewModel(), SensorEventListener
         rolloverIfNeeded(rawCount)
         val savedSteps = preferences.getInt(KEY_STEPS, 0)
         var baseline = preferences.getLong(KEY_BASELINE, BASELINE_UNSET)
-        // The hardware counter resets after a reboot. Preserve today's saved total if that happens.
         if (baseline == BASELINE_UNSET || rawCount < baseline) {
             baseline = rawCount - savedSteps
         }
@@ -350,7 +346,7 @@ private fun Header() {
                 drawCircle(color = Neon.copy(alpha = .45f), style = Stroke(width = 1.dp.toPx()))
             }
         ) {
-            Text("●  LIVE", color = Neon, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp))
+            Text("LIVE", color = Neon, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp))
         }
     }
 }
@@ -399,9 +395,9 @@ private fun StepOrb(state: StepUiState) {
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("आज के कदम", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text("TODAY", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             Text("${state.steps}", color = Color.White, fontSize = 60.sp, fontWeight = FontWeight.Black, letterSpacing = (-2).sp)
-            Text("/ ${state.goal} लक्ष्य", color = Neon, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text("/ ${state.goal} STEPS", color = Neon, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(7.dp))
             Text("${(state.progress * 100).roundToInt()}% COMPLETE", color = Color(0xFFBFCBE0), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
         }
@@ -411,9 +407,9 @@ private fun StepOrb(state: StepUiState) {
 @Composable
 private fun StatRow(state: StepUiState) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        MetricCard("↗", "${"%.2f".format(state.distanceKm)}", "KM", Neon, Modifier.weight(1f))
-        MetricCard("♨", "${state.calories}", "KCAL", Orange, Modifier.weight(1f))
-        MetricCard("◷", "${state.activeMinutes}", "MIN", Violet, Modifier.weight(1f))
+        MetricCard("DIST", "%.2f".format(state.distanceKm), "KM", Neon, Modifier.weight(1f))
+        MetricCard("BURN", "${state.calories}", "KCAL", Orange, Modifier.weight(1f))
+        MetricCard("TIME", "${state.activeMinutes}", "MIN", Violet, Modifier.weight(1f))
     }
 }
 
@@ -427,7 +423,7 @@ private fun MetricCard(icon: String, value: String, label: String, accent: Color
         }
     ) {
         Column(modifier = Modifier.padding(13.dp), verticalArrangement = Arrangement.SpaceBetween) {
-            Text(icon, color = accent, fontSize = 18.sp)
+            Text(icon, color = accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Column {
                 Text(value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp, maxLines = 1)
                 Text(label, color = Muted, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = .8.sp)
@@ -453,12 +449,12 @@ private fun AiCoachCard(state: StepUiState, onApplyAiGoal: () -> Unit) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(color = Violet.copy(alpha = .20f), shape = RoundedCornerShape(12.dp)) {
-                    Text("✦", color = Color(0xFFC5BEFF), fontSize = 22.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                    Text("AI", color = Color(0xFFC5BEFF), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
                 }
                 Spacer(Modifier.width(10.dp))
                 Column {
                     Text("AI COACH", color = Color(0xFFC5BEFF), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
-                    Text("आपकी daily motion intelligence", color = Muted, fontSize = 12.sp)
+                    Text("Daily motion intelligence", color = Muted, fontSize = 12.sp)
                 }
             }
             Spacer(Modifier.height(15.dp))
@@ -467,14 +463,14 @@ private fun AiCoachCard(state: StepUiState, onApplyAiGoal: () -> Unit) {
             Text(suggestion.body, color = Color(0xFFD6DCF0), fontSize = 13.sp, lineHeight = 19.sp)
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("सुझाया लक्ष्य  ${suggestion.goal} कदम", color = Neon, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text("Target: ${suggestion.goal} steps", color = Neon, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 Button(
                     onClick = onApplyAiGoal,
                     colors = ButtonDefaults.buttonColors(containerColor = Neon, contentColor = Ink),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 13.dp, vertical = 0.dp),
                     modifier = Modifier.height(34.dp)
-                ) { Text("अपनाएँ", fontSize = 12.sp, fontWeight = FontWeight.Black) }
+                ) { Text("APPLY", fontSize = 12.sp, fontWeight = FontWeight.Black) }
             }
         }
     }
@@ -487,10 +483,10 @@ private fun aiSuggestion(state: StepUiState): AiInsight {
     val average = if (recordedDays.isEmpty()) 6_000 else recordedDays.average().roundToInt()
     val suggestedGoal = ((average * 1.12).roundToInt().coerceIn(4_000, 12_000) / 500) * 500
     return when {
-        state.steps == 0 -> AiInsight("आज की momentum बनाइए", "10 मिनट की हल्की walk से शुरू कीजिए। आपका coach आज के लिए एक आसान rhythm सुझा रहा है।", suggestedGoal)
-        state.progress < .45f -> AiInsight("छोटा walk, बड़ा फर्क", "आप target के ${(state.progress * 100).roundToInt()}% पर हैं। अगले 20 मिनट में ${max(500, (state.goal - state.steps) / 3)} कदम का mini-walk सही रहेगा।", suggestedGoal)
-        state.progress < 1f -> AiInsight("आप strong pace पर हैं", "लक्ष्य तक सिर्फ ${state.goal - state.steps} कदम बाकी हैं। एक short walk आपके daily streak को पूरा कर देगी।", suggestedGoal)
-        else -> AiInsight("लक्ष्य पार कर लिया!", "बहुत बढ़िया। Recovery के लिए पानी पिएँ और 2 मिनट की calf stretch जोड़ें—आपका body कल भी तैयार रहेगा।", suggestedGoal)
+        state.steps == 0 -> AiInsight("Build momentum", "Take a short walk to get your rhythm started.", suggestedGoal)
+        state.progress < .45f -> AiInsight("Keep walking", "You are at ${(state.progress * 100).roundToInt()}%. A brisk walk will help hit your target.", suggestedGoal)
+        state.progress < 1f -> AiInsight("Strong pace", "${state.goal - state.steps} steps remaining to hit your daily goal!", suggestedGoal)
+        else -> AiInsight("Goal crushed!", "Target reached. Do some light stretching to recover.", suggestedGoal)
     }
 }
 
@@ -502,9 +498,8 @@ private fun WeekCard(week: List<DayPoint>) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text("WEEKLY PULSE", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text("आपकी 7 दिन की चाल", color = Muted, fontSize = 12.sp)
+                    Text("Last 7 days", color = Muted, fontSize = 12.sp)
                 }
-                Text("⌁", color = Neon, fontSize = 25.sp)
             }
             Spacer(Modifier.height(20.dp))
             Row(modifier = Modifier.fillMaxWidth().height(112.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
@@ -531,9 +526,8 @@ private fun WeekCard(week: List<DayPoint>) {
 private fun PermissionCard(onRequest: () -> Unit) {
     Surface(color = Orange.copy(alpha = .12f), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("⚡", fontSize = 20.sp)
             Spacer(Modifier.width(10.dp))
-            Text("Live steps के लिए Motion permission दें", color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            Text("Activity permission needed for live tracking", color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f))
             Button(onClick = onRequest, colors = ButtonDefaults.buttonColors(containerColor = Orange, contentColor = Ink), modifier = Modifier.height(32.dp)) {
                 Text("Enable", fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
@@ -544,7 +538,7 @@ private fun PermissionCard(onRequest: () -> Unit) {
 @Composable
 private fun SensorUnavailableCard() {
     Surface(color = Color(0x22FFB86B), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-        Text("इस device में step sensor नहीं मिला। किसी step-sensor वाले phone पर live tracking उपलब्ध होगी।", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(14.dp))
+        Text("No hardware step sensor found on this device.", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(14.dp))
     }
 }
 
@@ -552,7 +546,6 @@ private fun SensorUnavailableCard() {
 private fun BottomStatus(state: StepUiState) {
     val source = if (state.usesStepCounter) "Hardware sensor connected" else "Step detector connected"
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        Text("●", color = if (state.permissionGranted && state.hasStepSensor) Neon else Orange, fontSize = 10.sp)
         Spacer(Modifier.width(6.dp))
         Text(if (state.permissionGranted && state.hasStepSensor) source else "Tracking needs attention", color = Muted, fontSize = 11.sp)
     }
